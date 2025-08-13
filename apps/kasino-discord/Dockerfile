@@ -41,6 +41,8 @@ RUN rm -rf ./**/*/src
 # Final image
 FROM alpine AS runner
 
+RUN apk add --no-cache ffmpeg
+
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nodejs
 USER nodejs
@@ -49,9 +51,6 @@ WORKDIR /app
 COPY --from=builder --chown=nodejs:nodejs /app .
 WORKDIR /app/apps/kasino-discord
 
-ARG PORT=3000
-ENV PORT=${PORT}
 ENV NODE_ENV=production
-EXPOSE ${PORT}
 
 CMD NODE_OPTIONS="--import ./dist/src/tracing.js" npm run start
