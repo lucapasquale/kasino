@@ -1,14 +1,9 @@
-import {
-  AudioPlayerStatus,
-  NoSubscriberBehavior,
-  createAudioPlayer,
-  createAudioResource,
-  joinVoiceChannel,
-} from "@discordjs/voice";
+import { joinVoiceChannel } from "@discordjs/voice";
 import ytdl from "@distube/ytdl-core";
 import { CacheType, ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
 
 import { client } from "../index.js";
+import { MusicPlayer } from "../services/music-player.js";
 import { Command } from "./index.js";
 
 export const commands: Command[] = [
@@ -23,25 +18,40 @@ export const commands: Command[] = [
 
     handle: handlePlay,
   },
+
+  {
+    definition: new SlashCommandBuilder()
+      .setName("pause")
+      .setDescription("Pauses current song.")
+      .toJSON(),
+
+    handle: handlePause,
+  },
+
+  {
+    definition: new SlashCommandBuilder()
+      .setName("stop")
+      .setDescription("Stops current song.")
+      .toJSON(),
+
+    handle: handleStop,
+  },
 ];
 
 async function handlePlay(interaction: ChatInputCommandInteraction<CacheType>) {
   if (!interaction.guild) {
-    await interaction.reply("Needs to be used inside a server");
-    return;
+    return interaction.reply("Needs to be used inside a server");
   }
 
   const url = interaction.options.getString("url", true);
   if (!ytdl.validateURL(url)) {
-    await interaction.reply("Invalid YouTube URL");
-    return;
+    return interaction.reply("Invalid YouTube URL");
   }
 
   const guild = client.guilds.cache.get(interaction.guild.id);
   const member = await guild?.members.fetch(interaction.user.id);
   if (!member?.voice?.channelId) {
-    await interaction.reply("You need to be in a voice channel to play music");
-    return;
+    return interaction.reply("You need to be in a voice channel to play music");
   }
 
   const connection = joinVoiceChannel({
@@ -50,20 +60,24 @@ async function handlePlay(interaction: ChatInputCommandInteraction<CacheType>) {
     adapterCreator: member.voice.guild.voiceAdapterCreator,
   });
 
-  // Get stream from YouTube
-  const stream = ytdl(url, {
-    filter: "audioonly",
-    quality: "highestaudio",
-    highWaterMark: 1 << 25, // avoid buffering issues
-  });
+  MusicPlayer.getInstance().addToQueue(connection, url);
+  return interaction.reply("🎶 Now playing: " + url);
+}
 
-  const player = createAudioPlayer({ behaviors: { noSubscriber: NoSubscriberBehavior.Play } });
-  player.play(createAudioResource(stream));
-  player.on(AudioPlayerStatus.Idle, () => {
-    connection.destroy(); // Leave after finishing
-  });
+async function handlePause(interaction: ChatInputCommandInteraction<CacheType>) {
+  if (!interaction.guild) {
+    return interaction.reply("Needs to be used inside a server");
+  }
 
-  connection.subscribe(player);
+  MusicPlayer.getInstance().pause();
+  return interaction.reply("🎶 Paused");
+}
 
-  await interaction.reply("🎶 Now playing: " + url);
+async function handleStop(interaction: ChatInputCommandInteraction<CacheType>) {
+  if (!interaction.guild) {
+    return interaction.reply("Needs to be used inside a server");
+  }
+
+  MusicPlayer.getInstance().stop();
+  return interaction.reply("🎶 Stopped");
 }
