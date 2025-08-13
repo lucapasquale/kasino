@@ -13,6 +13,8 @@ function parseEnvVars() {
 
     discord: z.object({
       token: z.string(),
+      clientId: z.string(),
+      testGuildId: z.string().optional(),
     }),
   });
 
@@ -25,6 +27,8 @@ function parseEnvVars() {
 
     discord: {
       token: process.env.DISCORD_TOKEN,
+      clientId: process.env.DISCORD_CLIENT_ID,
+      testGuildId: process.env.DISCORD_TEST_GUILD_ID,
     },
   });
 
