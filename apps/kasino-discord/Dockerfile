@@ -16,7 +16,7 @@ FROM base AS pruner
 WORKDIR /app
 COPY ../../ .
 
-RUN turbo prune --scope=api --docker
+RUN turbo prune --scope=kasino-discord --docker
 
 # Build the project
 FROM base AS builder
@@ -34,7 +34,7 @@ RUN --mount=type=cache,id=pnpm,target=~/.pnpm-store pnpm install --frozen-lockfi
 # Copy source code of isolated subworkspace
 COPY --from=pruner /app/out/full/ .
 
-RUN turbo build --filter=api
+RUN turbo build --filter=kasino-discord
 RUN --mount=type=cache,id=pnpm,target=~/.pnpm-store pnpm prune --prod --no-optional
 RUN rm -rf ./**/*/src
 
@@ -47,7 +47,7 @@ USER nodejs
 
 WORKDIR /app
 COPY --from=builder --chown=nodejs:nodejs /app .
-WORKDIR /app/apps/api
+WORKDIR /app/apps/kasino-discord
 
 ARG PORT=3000
 ENV PORT=${PORT}
