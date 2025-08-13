@@ -27,19 +27,21 @@ export const commands: Command[] = [
 
 async function handlePlay(interaction: ChatInputCommandInteraction<CacheType>) {
   if (!interaction.guild) {
-    throw new Error("Needs to be used inside a server");
+    await interaction.reply("Needs to be used inside a server");
+    return;
   }
 
   const url = interaction.options.getString("url", true);
-  if (!url || !ytdl.validateURL(url)) {
-    throw new Error("Invalid YouTube URL");
+  if (!ytdl.validateURL(url)) {
+    await interaction.reply("Invalid YouTube URL");
+    return;
   }
 
   const guild = client.guilds.cache.get(interaction.guild.id);
   const member = await guild?.members.fetch(interaction.user.id);
-
   if (!member?.voice?.channelId) {
-    throw new Error("You need to be in a voice channel to play music");
+    await interaction.reply("You need to be in a voice channel to play music");
+    return;
   }
 
   const connection = joinVoiceChannel({
