@@ -50,7 +50,12 @@ export async function processInteraction(interaction: Interaction<CacheType>) {
     return interaction.reply("Unknown command");
   }
 
-  command.handle(interaction).catch((err) => {
-    logger.error("Error handling command", { err, interaction });
+  command.handle(interaction).catch((err: Error) => {
+    logger.error("Error handling command", {
+      interaction,
+      error: { message: err.message, stack: err.stack },
+    });
+
+    return interaction.reply("Command failed");
   });
 }
