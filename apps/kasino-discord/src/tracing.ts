@@ -35,7 +35,9 @@ const tracer = new NodeSDK({
   ],
 });
 
-tracer.start();
+if (config.otlp.url) {
+  tracer.start();
+}
 
 process.on("SIGTERM", () => {
   tracer
