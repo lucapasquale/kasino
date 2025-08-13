@@ -39,20 +39,20 @@ export async function processInteraction(interaction: Interaction<CacheType>) {
     return;
   }
 
-  logger.info(`Received interaction: ${interaction}`, {
-    interaction,
-    user: interaction.user,
+  logger.info("Received interaction", {
+    interaction: interaction.toString(),
+    user: interaction.user.tag,
   });
 
   const command = ALL_COMMANDS.find((cmd) => cmd.definition.name === interaction.commandName);
   if (!command) {
-    logger.error("Failed to find a command", { interaction });
+    logger.error("Failed to find command");
     return interaction.reply("Unknown command");
   }
 
   command.handle(interaction).catch((err: Error) => {
     logger.error("Error handling command", {
-      interaction,
+      interaction: interaction.toString(),
       error: { message: err.message, stack: err.stack },
     });
 
