@@ -2,6 +2,7 @@ import {
   CacheType,
   ChatInputCommandInteraction,
   Interaction,
+  InteractionResponse,
   RESTPostAPIChatInputApplicationCommandsJSONBody,
   Routes,
 } from "discord.js";
@@ -14,7 +15,9 @@ import { commands as pingCommands } from "./ping.js";
 
 export type Command = {
   definition: RESTPostAPIChatInputApplicationCommandsJSONBody;
-  handle: (interaction: ChatInputCommandInteraction<CacheType>) => Promise<void>;
+  handle: (
+    interaction: ChatInputCommandInteraction<CacheType>,
+  ) => Promise<InteractionResponse<boolean>>;
 };
 
 const ALL_COMMANDS = [...pingCommands, ...musicCommands];
@@ -50,12 +53,16 @@ export async function processInteraction(interaction: Interaction<CacheType>) {
     return interaction.reply("Unknown command");
   }
 
-  command.handle(interaction).catch((err: Error) => {
+  try {
+    await command.handle(interaction);
+  } catch (err: unknown) {
     logger.error("Error handling command", {
       interaction: interaction.toString(),
-      error: { message: err.message, stack: err.stack },
+      error: { message: (err as Error).message, stack: (err as Error).stack },
     });
 
-    return interaction.reply("Command failed");
-  });
+    if (!interaction.replied) {
+      interaction.reply("Command failed");
+    }
+  }
 }

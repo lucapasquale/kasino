@@ -10,7 +10,7 @@ export const commands: Command[] = [
       .toJSON(),
 
     handle: async (interaction: ChatInputCommandInteraction<CacheType>) => {
-      await interaction.reply("Pong!");
+      return interaction.reply("Pong!");
     },
   },
 ];
