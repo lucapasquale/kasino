@@ -1,20 +1,16 @@
-// import { REST, Routes } from "discord.js";
+import { CacheType, ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
 
-export const commands = [
+import { Command } from "./index.js";
+
+export const commands: Command[] = [
   {
-    name: "ping",
-    description: "Replies with Pong!",
+    definition: new SlashCommandBuilder()
+      .setName("ping")
+      .setDescription("Responds with 'pong'")
+      .toJSON(),
+
+    handle: async (interaction: ChatInputCommandInteraction<CacheType>) => {
+      await interaction.reply("Pong!");
+    },
   },
 ];
-
-// const rest = new REST({ version: "10" }).setToken(TOKEN);
-
-// try {
-//   console.log("Started refreshing application (/) commands.");
-
-//   await rest.put(Routes.applicationCommands(CLIENT_ID), { body: commands });
-
-//   console.log("Successfully reloaded application (/) commands.");
-// } catch (error) {
-//   console.error(error);
-// }

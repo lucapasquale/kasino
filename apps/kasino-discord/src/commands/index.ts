@@ -1,15 +1,37 @@
-import { CacheType, Interaction, REST, Routes } from "discord.js";
+import {
+  CacheType,
+  ChatInputCommandInteraction,
+  Interaction,
+  RESTPostAPIChatInputApplicationCommandsJSONBody,
+  Routes,
+} from "discord.js";
 
 import { config } from "../config.js";
+import { api } from "../index.js";
 import { logger } from "../logger.js";
+import { commands as musicCommands } from "./music.js";
 import { commands as pingCommands } from "./ping.js";
 
-const ALL_COMMANDS = [...pingCommands];
+export type Command = {
+  definition: RESTPostAPIChatInputApplicationCommandsJSONBody;
+  handle: (interaction: ChatInputCommandInteraction<CacheType>) => Promise<void>;
+};
 
-const rest = new REST({ version: "10" }).setToken(config.discord.token);
+const ALL_COMMANDS = [...pingCommands, ...musicCommands];
 
 export async function registerCommands() {
-  await rest.put(Routes.applicationCommands(config.discord.clientId), { body: ALL_COMMANDS });
+  const cmdDefinitions = ALL_COMMANDS.map((cmd) => cmd.definition);
+
+  if (config.environment === "development" && config.discord.testGuildId) {
+    await api.put(
+      Routes.applicationGuildCommands(config.discord.clientId, config.discord.testGuildId),
+      { body: cmdDefinitions },
+    );
+  } else {
+    await api.put(Routes.applicationCommands(config.discord.clientId), {
+      body: cmdDefinitions,
+    });
+  }
 }
 
 export async function processInteraction(interaction: Interaction<CacheType>) {
@@ -17,9 +39,18 @@ export async function processInteraction(interaction: Interaction<CacheType>) {
     return;
   }
 
-  logger.info(`Received interaction: ${interaction}`);
+  logger.info(`Received interaction: ${interaction}`, {
+    interaction,
+    user: interaction.user,
+  });
 
-  if (interaction.commandName === "ping") {
-    await interaction.reply("Pong!");
+  const command = ALL_COMMANDS.find((cmd) => cmd.definition.name === interaction.commandName);
+  if (!command) {
+    logger.error("Failed to find a command", { interaction });
+    return interaction.reply("Unknown command");
   }
+
+  command.handle(interaction).catch((err) => {
+    logger.error("Error handling command", { err, interaction });
+  });
 }
