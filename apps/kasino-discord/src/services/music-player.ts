@@ -38,20 +38,30 @@ export class MusicPlayer {
   }
 
   addToQueue(connection: VoiceConnection, url: string) {
+    const isPlaying = this.connection && this.player.state.status === AudioPlayerStatus.Playing;
+
     if (!this.connection) {
       this.connection = connection;
       this.connection.subscribe(this.player);
     }
 
-    this.queue.push(url);
     logger.info("Adding url to queue", {
       url,
       queue: this.queue,
     });
+    this.queue.push(url);
 
-    if (this.player.state.status !== AudioPlayerStatus.Playing) {
+    if (!isPlaying) {
       this.playNext();
     }
+  }
+
+  getQueue() {
+    return this.queue;
+  }
+
+  next() {
+    return this.playNext();
   }
 
   pause() {
@@ -72,7 +82,7 @@ export class MusicPlayer {
     const nextUrl = this.queue.shift();
     if (!nextUrl) {
       this.stop();
-      return;
+      return null;
     }
 
     const stream = ytdl(nextUrl, {
@@ -82,5 +92,6 @@ export class MusicPlayer {
     });
 
     this.player.play(createAudioResource(stream));
+    return nextUrl;
   }
 }

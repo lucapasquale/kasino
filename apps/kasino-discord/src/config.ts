@@ -16,6 +16,10 @@ function parseEnvVars() {
       clientId: z.string(),
       testGuildId: z.string().optional(),
     }),
+
+    youtube: z.object({
+      apiKey: z.string(),
+    }),
   });
 
   const { error, data } = schema.safeParse({
@@ -29,6 +33,10 @@ function parseEnvVars() {
       token: process.env.DISCORD_TOKEN,
       clientId: process.env.DISCORD_CLIENT_ID,
       testGuildId: process.env.DISCORD_TEST_GUILD_ID,
+    },
+
+    youtube: {
+      apiKey: process.env.YOUTUBE_API_KEY,
     },
   });
 
