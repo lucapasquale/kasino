@@ -1,6 +1,15 @@
 import { joinVoiceChannel } from "@discordjs/voice";
 import ytdl from "@distube/ytdl-core";
-import { CacheType, ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
+import {
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonInteraction,
+  ButtonStyle,
+  CacheType,
+  ChatInputCommandInteraction,
+  MessageActionRowComponentBuilder,
+  SlashCommandBuilder,
+} from "discord.js";
 
 import { client } from "../index.js";
 import { MusicPlayer } from "../services/music-player.js";
@@ -13,7 +22,10 @@ export const commands: Command[] = [
       .setName("play")
       .setDescription("Plays a song from YouTube.")
       .addStringOption((option) =>
-        option.setName("url").setDescription("The song to play").setRequired(true),
+        option
+          .setName("url")
+          .setDescription("The YouTube music URL or search term")
+          .setRequired(true),
       )
       .toJSON(),
 
@@ -36,7 +48,29 @@ export const commands: Command[] = [
         return interaction.reply("🎶 No more songs in the queue");
       }
 
-      return interaction.reply("🎶 Now playing: " + nextUrl);
+      return interaction.reply({
+        content: "🎶 Now playing: " + nextUrl,
+        components: [buildMusicActions("pause")],
+      });
+    },
+  },
+
+  {
+    definition: new SlashCommandBuilder()
+      .setName("resume")
+      .setDescription("Resumes current song.")
+      .toJSON(),
+
+    handle: async (interaction) => {
+      if (!interaction.guild) {
+        return interaction.reply("You need to be inside a server to use this command");
+      }
+
+      MusicPlayer.getInstance().resume();
+      return interaction.reply({
+        content: "🎶 Resumed",
+        components: [buildMusicActions("pause")],
+      });
     },
   },
 
@@ -52,7 +86,10 @@ export const commands: Command[] = [
       }
 
       MusicPlayer.getInstance().pause();
-      return interaction.reply("🎶 Paused");
+      return interaction.reply({
+        content: "🎶 Paused",
+        components: [buildMusicActions("resume")],
+      });
     },
   },
 
@@ -73,8 +110,10 @@ export const commands: Command[] = [
   },
 ];
 
-async function handlePlay(interaction: ChatInputCommandInteraction<CacheType>) {
-  if (!interaction.guild) {
+async function handlePlay(
+  interaction: ChatInputCommandInteraction<CacheType> | ButtonInteraction<CacheType>,
+) {
+  if (!interaction.guild || interaction.isButton()) {
     return interaction.reply("You need to be inside a server to use this command");
   }
 
@@ -97,10 +136,16 @@ async function handlePlay(interaction: ChatInputCommandInteraction<CacheType>) {
   MusicPlayer.getInstance().addToQueue(connection, url);
 
   if (MusicPlayer.getInstance().getQueue().length === 0) {
-    return interaction.reply("🎶 Now playing: " + url);
+    return interaction.reply({
+      content: "🎶 Now playing: " + url,
+      components: [buildMusicActions("pause")],
+    });
   }
 
-  return interaction.reply("🎶 Added to queue: " + url);
+  return interaction.reply({
+    content: "🎶 Added to queue: " + url,
+    components: [buildMusicActions("pause")],
+  });
 }
 
 async function getYoutubeUrl(term: string) {
@@ -112,4 +157,32 @@ async function getYoutubeUrl(term: string) {
 
   const firstResult = searchResult[0]?.id?.videoId;
   return firstResult ? `https://www.youtube.com/watch?v=${firstResult}` : null;
+}
+
+function buildMusicActions(mainAction: "pause" | "resume") {
+  const pauseButton = new ButtonBuilder()
+    .setCustomId("pause")
+    .setLabel("Pause")
+    .setStyle(ButtonStyle.Secondary);
+
+  const resumeButton = new ButtonBuilder()
+    .setCustomId("resume")
+    .setLabel("Resume")
+    .setStyle(ButtonStyle.Success);
+
+  const nextButton = new ButtonBuilder()
+    .setCustomId("next")
+    .setLabel("Next")
+    .setStyle(ButtonStyle.Secondary);
+
+  const stopButton = new ButtonBuilder()
+    .setCustomId("stop")
+    .setLabel("Stop")
+    .setStyle(ButtonStyle.Danger);
+
+  return new ActionRowBuilder().addComponents(
+    mainAction === "pause" ? pauseButton : resumeButton,
+    nextButton,
+    stopButton,
+  ) as ActionRowBuilder<MessageActionRowComponentBuilder>;
 }

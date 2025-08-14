@@ -1,4 +1,5 @@
 import {
+  ButtonInteraction,
   CacheType,
   ChatInputCommandInteraction,
   Interaction,
@@ -16,7 +17,7 @@ import { commands as pingCommands } from "./ping.js";
 export type Command = {
   definition: RESTPostAPIChatInputApplicationCommandsJSONBody;
   handle: (
-    interaction: ChatInputCommandInteraction<CacheType>,
+    interaction: ChatInputCommandInteraction<CacheType> | ButtonInteraction<CacheType>,
   ) => Promise<InteractionResponse<boolean>>;
 };
 
@@ -38,16 +39,20 @@ export async function registerCommands() {
 }
 
 export async function processInteraction(interaction: Interaction<CacheType>) {
-  if (!interaction.isChatInputCommand()) {
+  if (!interaction.isChatInputCommand() && !interaction.isButton()) {
     return;
   }
+
+  const commandName = interaction.isChatInputCommand()
+    ? interaction.commandName
+    : interaction.customId;
 
   logger.info("Received interaction", {
     interaction: interaction.toString(),
     user: interaction.user.tag,
   });
 
-  const command = ALL_COMMANDS.find((cmd) => cmd.definition.name === interaction.commandName);
+  const command = ALL_COMMANDS.find((cmd) => cmd.definition.name === commandName);
   if (!command) {
     logger.error("Failed to find command");
     return interaction.reply("Unknown command");

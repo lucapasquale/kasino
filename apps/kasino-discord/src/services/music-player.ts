@@ -69,6 +69,11 @@ export class MusicPlayer {
     this.player.pause();
   }
 
+  resume() {
+    logger.info("Player resumed");
+    this.player.unpause();
+  }
+
   stop() {
     logger.info("Player stopped");
     this.player.stop();
