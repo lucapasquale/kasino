@@ -1,4 +1,4 @@
-import { CacheType, ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
+import { SlashCommandBuilder } from "discord.js";
 
 import { Command } from "./index.js";
 
@@ -9,7 +9,7 @@ export const commands: Command[] = [
       .setDescription("Responds with 'pong'")
       .toJSON(),
 
-    handle: async (interaction: ChatInputCommandInteraction<CacheType>) => {
+    handle: async (interaction) => {
       return interaction.reply("Pong!");
     },
   },
